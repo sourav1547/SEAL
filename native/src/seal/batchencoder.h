@@ -77,6 +77,7 @@ namespace seal
         first row of the matrix, and the second half represent the second row. The numbers
         in the matrix can be at most equal to the plaintext modulus for it to represent
         a valid plaintext.
+        @ sourav, the numbers in the matrix needs to be less than the plain text modulus.
 
         If the destination plaintext overlaps the input values in memory, the behavior of
         this function is undefined.

@@ -31,6 +31,8 @@ void example_rotation();
 
 void example_performance_test();
 
+void example_rgsw_basics();
+
 /*
 Helper function: Prints the name of the example in a fancy banner.
 */
@@ -69,6 +71,9 @@ inline void print_parameters(std::shared_ptr<seal::SEALContext> context)
     std::string scheme_name;
     switch (context_data.parms().scheme())
     {
+    case seal::scheme_type::RGSW:
+        scheme_name = "RGSW";
+        break;
     case seal::scheme_type::BFV:
         scheme_name = "BFV";
         break;

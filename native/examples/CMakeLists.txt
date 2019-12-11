@@ -17,6 +17,7 @@ target_sources(sealexamples
         4_ckks_basics.cpp
         5_rotation.cpp
         6_performance.cpp
+        7_rgsw_basics.cpp
 )
 
 # Import Microsoft SEAL

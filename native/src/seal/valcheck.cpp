@@ -134,10 +134,32 @@ namespace seal
         // this check. Then, also need to check that the parms_id matches the
         // key level parms_id, that the Ciphertext is in NTT form, and that the
         // size is minimal (i.e., SEAL_CIPHERTEXT_SIZE_MIN).
-        auto key_parms_id = context->key_parms_id();
-        return is_metadata_valid_for(in.data(), move(context), true) &&
-            in.data().is_ntt_form() && (in.parms_id() == key_parms_id) &&
-            (in.data().size() == SEAL_CIPHERTEXT_SIZE_MIN);
+        auto key_parms_id = context->key_parms_id(); // 1
+        bool b_mdata = is_metadata_valid_for(in.data(), move(context), true); //1 
+        bool b_ntt = in.data().is_ntt_form(); // 1
+        bool b_parms = (in.parms_id() == key_parms_id); // 1
+        bool b_size = true;
+
+        /**
+        Todo: We have to change this part to accommodate for the initial size
+        of the cipher texts.
+        */
+
+        /*
+        auto &context_data = *context->key_context_data();
+        auto &parms = context_data.parms();
+
+        if (parms.scheme() == scheme_type::RGSW)
+        {
+            size_t encrypted_size = parms.get_rgsw_kpl();
+            b_size = (in.data().size() == encrypted_size);
+        } 
+        else
+        {
+            b_size = (in.data().size() == SEAL_CIPHERTEXT_SIZE_MIN);
+        }
+        */
+        return  b_mdata && b_ntt && b_parms && b_size;
     }
 
     bool is_metadata_valid_for(

@@ -43,6 +43,13 @@ namespace seal
     the validity of the ciphertext for homomorphic operations and decryption.
 
     @par Memory Management
+
+    @sourav
+    size: # of polynomials contained in a ciphertext.
+    capacity: # of of polynomials that fit in the current memory allocation.
+    Todo: For RGSW, we have to set this parameter based on the number of 
+    rows in the ciphertext.
+
     The size of a ciphertext refers to the number of polynomials it contains,
     whereas its capacity refers to the number of polynomials that fit in the
     current memory allocation. In high-performance applications unnecessary
@@ -173,7 +180,7 @@ namespace seal
         /**
         Allocates enough memory to accommodate the backing array of a ciphertext
         with given capacity. In addition to the capacity, the allocation size is
-        determined by the encryption parameters corresponing to the given
+        determined by the encryption parameters corresponding to the given
         parms_id.
 
         @param[in] context The SEALContext

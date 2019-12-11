@@ -30,7 +30,10 @@ namespace seal
         BFV = 0x1,
 
         // Cheon-Kim-Kim-Song scheme
-        CKKS = 0x2
+        CKKS = 0x2,
+
+        // Ring-GSW Scheme using BFV Scheme
+        RGSW = 0x3
     };
 
     /**
@@ -114,6 +117,16 @@ namespace seal
             scheme_ = static_cast<scheme_type>(scheme);
             compute_parms_id();
         }
+
+
+        EncryptionParameters(scheme_type scheme, std::uint64_t l, 
+            std::uint64_t bg_bit ) : scheme_(scheme), l_(l), bg_bit_(bg_bit)
+        {
+            bg_ = 1 << bg_bit_;
+            kpl_ = 2*l_;
+            mask_mod_ = bg_ -1;
+            half_bg_ = bg_/2;
+        } 
 
         /**
         Creates a copy of a given instance of EncryptionParameters.
@@ -222,7 +235,7 @@ namespace seal
         inline void set_plain_modulus(const SmallModulus &plain_modulus)
         {
             // Check that scheme is BFV
-            if (scheme_ != scheme_type::BFV && !plain_modulus.is_zero())
+            if (scheme_ != scheme_type::BFV && scheme_ != scheme_type::RGSW && !plain_modulus.is_zero())
             {
                 throw std::logic_error("plain_modulus is not supported for this scheme");
             }
@@ -309,6 +322,42 @@ namespace seal
         }
 
         /**
+        Set RGSW base
+        */
+        inline void set_rgsw_bg(std::uint64_t bg)
+        {
+            if(scheme_ != scheme_type::RGSW)
+                throw std::invalid_argument("Incorrect request for set_rgsw_bg");
+            bg_ = bg;
+        }
+
+        /**
+        Set number of rows in RGSW ciphertext
+        */
+        inline void set_rgsw_kpl(std::uint64_t kpl)
+        {
+            if(scheme_ != scheme_type::RGSW)
+                throw std::invalid_argument("Incorrect request for set_rgsw_kpl");
+            kpl_ = kpl;
+        }
+
+        /**
+        Return RGSW ciphertext base
+        */
+        SEAL_NODISCARD inline uint64_t get_rgsw_bg() const noexcept
+        {
+            return bg_;
+        }
+
+        /**
+        Return number of rows in RGSW ciphertext 
+        */
+        SEAL_NODISCARD inline uint64_t get_rgsw_kpl() const noexcept
+        {
+            return kpl_;
+        }
+
+        /**
         Compares a given set of encryption parameters to the current set of
         encryption parameters. The comparison is performed by comparing the
         parms_ids of the parameter sets rather than comparing the parameters
@@ -354,7 +403,29 @@ namespace seal
             coeff_modulus_total_size = util::mul_safe(
                 coeff_modulus_total_size, coeff_modulus_.size());
 
-            std::size_t members_size = Serialization::ComprSizeEstimate(
+            std::size_t members_size;
+            if (scheme_ == scheme_type::RGSW){
+                members_size = Serialization::ComprSizeEstimate(
+                    util::add_safe(
+                        sizeof(scheme_),
+                        sizeof(std::uint64_t), // poly_modulus_degree_
+                        sizeof(std::uint64_t), // coeff_mod_count
+
+                        //RGSW Additional parameters.
+                        sizeof(std::uint64_t), // bg_
+                        sizeof(std::uint64_t), // half_bg_
+                        sizeof(std::uint64_t), // l_, number of rows
+                        sizeof(std::uint64_t), // bg_bit_, size of base
+                        sizeof(std::uint64_t), // mask_mod_ 
+                        sizeof(std::uint64_t),  // kpl_
+
+                        coeff_modulus_total_size,
+                        util::safe_cast<std::size_t>(
+                            plain_modulus_.save_size(compr_mode_type::none))),
+                    compr_mode);
+
+            } else {
+               members_size = Serialization::ComprSizeEstimate(
                 util::add_safe(
                     sizeof(scheme_),
                     sizeof(std::uint64_t), // poly_modulus_degree_
@@ -363,6 +434,7 @@ namespace seal
                     util::safe_cast<std::size_t>(
                         plain_modulus_.save_size(compr_mode_type::none))),
                 compr_mode);
+            }
 
             return util::safe_cast<std::streamoff>(util::add_safe(
                 sizeof(Serialization::SEALHeader),
@@ -465,7 +537,12 @@ namespace seal
         */
         struct EncryptionParametersPrivateHelper;
 
-    private:
+    /**
+    Todo: Here I am changing the visibility of all the members in the Encryption
+    parameter class. This might be a security vulnerability. We have to change
+    it back to private again.
+    */
+    protected:
         /**
         Helper function to determine whether given std::uint8_t represents a valid
         value for scheme_type. The return value will be false is the scheme is set
@@ -479,6 +556,9 @@ namespace seal
                 /* fall through */
 
             case static_cast<std::uint8_t>(scheme_type::BFV) :
+                /* fall through */
+
+            case static_cast<std::uint8_t>(scheme_type::RGSW):
                 /* fall through */
 
             case static_cast<std::uint8_t>(scheme_type::CKKS) :
@@ -515,6 +595,18 @@ namespace seal
         SmallModulus plain_modulus_{};
 
         parms_id_type parms_id_ = parms_id_zero;
+
+        /**
+        RGSW Parameters:
+        Currently I am currently defining them to be 
+        64 bit integers. We can later change them as per the need. 
+        */
+        std::uint64_t l_ = 1;  //decomposition length
+        std::uint64_t bg_bit_ = 1; // log_2(bg_)
+        std::uint64_t bg_ = 2;// Decomposition base
+        std::uint64_t half_bg_ = 1; // Bg/2
+        std::uint64_t mask_mod_; // Bg-1 Todo:Check whether this is necessary
+        std::uint64_t kpl_; // number of rows (k+1)*l. In the RGSW example shown in Ring-ORAM k=1.
     };
 }
 

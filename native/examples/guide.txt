@@ -1,0 +1,38 @@
+For examples:
+- native
+	- examples
+		- set parameters and run examples.
+
+Approach:
+1. We want modulus q to be large say 64*4 = 256 bits.
+2. RNS decomposition is equivalent to Chinese Remainder Theorem for Polynomials
+3. Earlier ORAM was using FFT, but now we plan to switch to NTT with RNS (this 
+   allows one to compute group operation precisely assuming all group elements
+   can be covered using the available precision bits).
+4. Interestingly HE library also uses the NTT library.
+
+
+Misc:
+1. In BFV RLWE scheme, messages are encoded in higher order bits.
+2. Encyrptor.h and Decryptor.h implements BFV schemes
+	- encrypt_symmetric for secret key encryption
+	- encrypt for public key encryption
+
+
+Code Details:
+1. SEAL/native/src/seal/util/
+	- Contains all necessary files required to implement External Product and Ring-GSW.
+	- For example, polyarithmeticmod.cpp contains arithmetic operations on polynomial
+	- ntt.cpp and smallntt.cpp implements operations involving ntt
+		- ntt_negacyclic_harvey.cpp implements polynomial operations
+		- dyadic_product
+	- intarithmeticsmallmod.cpp
+
+
+To read:
+1. Relinearization in BFV schemes.
+2. RNS Decomposition
+3. Special Modulus techniques.
+4. Batch Encoding.
+5. Have to read about Modulus switching techniques
+6. Read about Galois Keys and its usage in Homomorphic Encryption.

@@ -22,6 +22,7 @@ target_sources(seal
         ${CMAKE_CURRENT_LIST_DIR}/uintarithsmallmod.cpp
         ${CMAKE_CURRENT_LIST_DIR}/uintcore.cpp
         ${CMAKE_CURRENT_LIST_DIR}/ztools.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/rgsw.cpp
 )
 
 # Create the config file

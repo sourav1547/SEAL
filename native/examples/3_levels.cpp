@@ -54,6 +54,7 @@ void example_levels()
 
         CoeffModulus::MaxBitCount(poly_modulus_degree)
 
+    //@sourav, greater than.
     returns 218 (less than 50+30+30+50+50=210).
 
     Due to the modulus switching chain, the order of the 5 primes is significant.

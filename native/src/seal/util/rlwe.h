@@ -17,11 +17,11 @@ namespace seal
     namespace util
     {
         /**
-        Generate a ternary polynomial uniformlly and store in RNS representation.
+        Generate a ternary polynomial uniformly and store in RNS representation.
 
         @param[in] rng A uniform random generator.
-        @param[in] parms EncryptionParameters used to parametize an RNS polynomial.
-        @param[out] destination Allocated space to store a random polynomia.
+        @param[in] parms EncryptionParameters used to parameterize an RNS polynomial.
+        @param[out] destination Allocated space to store a random polynomial.
         */
         void sample_poly_ternary(
             std::shared_ptr<UniformRandomGenerator> rng,
@@ -67,6 +67,14 @@ namespace seal
             parms_id_type parms_id,
             bool is_ntt_form,
             Ciphertext &destination);
+
+        void encrypt_zero_asymmetric(
+            const PublicKey &public_key,
+            std::shared_ptr<SEALContext> context,
+            parms_id_type parms_id,
+            bool is_ntt_form,
+            Ciphertext &destination, 
+            std::uint64_t index);
 
         /**
         Create an encryption of zero with a secret key and store in a ciphertext.

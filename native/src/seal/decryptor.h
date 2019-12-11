@@ -80,6 +80,10 @@ namespace seal
         to grow while ensuring correct decryptions. This function works only with
         the BFV scheme.
 
+        Sourav: We can compute the invariant noise budget for RGSW by computing
+        the minimum noise budget across all ciphertext in the RGSW vector.
+        Todo: Add a function 
+
         @par Invariant Noise Budget
         The invariant noise polynomial of a ciphertext is a rational coefficient
         polynomial, such that a ciphertext decrypts correctly as long as the
@@ -106,6 +110,11 @@ namespace seal
 
         void ckks_decrypt(const Ciphertext &encrypted, Plaintext &destination,
             MemoryPoolHandle pool);
+
+        /**
+        Sourav: For the purpose of external product and Onion-Ring ORAM, we 
+        don't need the RGSW decryption. We can implement it later if needed.
+        */
 
         Decryptor(const Decryptor &copy) = delete;
 

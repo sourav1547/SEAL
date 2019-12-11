@@ -135,6 +135,11 @@ namespace seal
         }
 
         /**
+        Sourav: GaloisKeys are needed for rotation of ciphertexts, hence we can
+        ignore them for now.
+        */
+
+        /**
         Generates and returns Galois keys. This function creates specific Galois
         keys that can be used to apply specific Galois automorphisms on encrypted
         data. The user needs to give as input a vector of Galois elements
@@ -454,7 +459,7 @@ namespace seal
         // Get a vector of galois_elts from a vector of steps.
         std::vector<std::uint64_t> galois_elts_from_steps(const std::vector<int> &steps);
 
-        // Get a vector all necesssary galois_etls.
+        // Get a vector all necessary galois_etls.
         std::vector<std::uint64_t> galois_elts_all();
 
         // We use a fresh memory pool with `clear_on_destruction' enabled.

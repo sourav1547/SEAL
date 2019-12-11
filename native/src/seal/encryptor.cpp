@@ -17,6 +17,8 @@
 #include "seal/util/smallntt.h"
 #include "seal/util/rlwe.h"
 #include "seal/util/scalingvariant.h"
+#include "seal/util/rgsw.h"
+#include "seal/rgswencparams.h"
 
 using namespace std;
 
@@ -130,14 +132,18 @@ namespace seal
         {
             is_ntt_form = true;
         }
-        else if (parms.scheme() != scheme_type::BFV)
+        else if (parms.scheme() != scheme_type::BFV && parms.scheme() != scheme_type::RGSW)
         {
             throw invalid_argument("unsupported scheme");
         }
 
         // Resize destination and save results
-        destination.resize(context_, parms_id, 2);
-
+        std::uint64_t encrypted_size = 2;
+        if (parms.scheme() == scheme_type::RGSW)
+        {
+            encrypted_size = parms.get_rgsw_kpl();
+        }
+        destination.resize(context_, parms_id, encrypted_size);
         // If asymmetric key encryption
         if (is_asymmetric)
         {
@@ -150,48 +156,79 @@ namespace seal
                 auto &base_converter = prev_context_data.base_converter();
 
                 // Zero encryption without modulus switching
+                // Todo: Check how to define an array of ciphertext, instead of an
+                // single ciphertext.
                 Ciphertext temp(pool);
-                util::encrypt_zero_asymmetric(public_key_, context_, prev_parms_id,
-                    is_ntt_form, temp);
-
-                // Modulus switching
-                for (size_t j = 0; j < 2; j++)
+                
+                if(parms.scheme() == scheme_type::RGSW)
                 {
-                    if (is_ntt_form)
-                    {
-                        base_converter->round_last_coeff_modulus_ntt_inplace(
-                            temp.data(j),
-                            prev_context_data.small_ntt_tables(),
-                            pool);
-                    }
-                    else
-                    {
-                        base_converter->round_last_coeff_modulus_inplace(
-                            temp.data(j),
-                            pool);
-                    }
-                    util::set_poly_poly(
-                        temp.data(j),
-                        coeff_count,
-                        coeff_mod_count,
-                        destination.data(j));
+                    util::encrypt_zero_asymmetric_rgsw(public_key_, context_, prev_parms_id, is_ntt_form, temp);
                 }
+                else 
+                {
+                    util::encrypt_zero_asymmetric(public_key_, context_, prev_parms_id, is_ntt_form, temp);
+                }
+                
+                // Modulus switching
+                for (int i=0; i<encrypted_size; i+=2)
+                {
+                    for (size_t j = 0; j < 2; j++)
+                    {
+                        if (is_ntt_form)
+                        {
+                            // Todo: Check for correct indexing
+                            base_converter->round_last_coeff_modulus_ntt_inplace(
+                                temp.data(i+j),
+                                prev_context_data.small_ntt_tables(),
+                                pool);
+                        }
+                        else
+                        {
+                            // Todo: Check of correct indexing
+                            base_converter->round_last_coeff_modulus_inplace(
+                                temp.data(i+j), pool);
+                        }
+
+                        // Todo: Check of correct indexing
+                        util::set_poly_poly(
+                            temp.data(i+j),
+                            coeff_count,
+                            coeff_mod_count,
+                            destination.data(i+j));
+                    }
+                }
+                /**
+                Sourav: Parameters of a RGSW ciphertext common across all rows of 
+                the matrix. Todo: Check correctness of indexing
+                */
                 destination.is_ntt_form() = is_ntt_form;
                 destination.scale() = temp.scale();
-                destination.parms_id() = parms_id;
+                destination.parms_id() = parms_id;            
             }
             else
-            {
-                // Does not require modulus switching
-                util::encrypt_zero_asymmetric(public_key_, context_, parms_id,
-                    is_ntt_form, destination);
+            {   
+                // Todo: Check correctness of encryption and return
+                if(parms.scheme() == scheme_type::RGSW)
+                {
+                    util::encrypt_zero_asymmetric_rgsw(public_key_, context_, parms_id, is_ntt_form,  destination);
+                }
+                else 
+                {
+                    util::encrypt_zero_asymmetric(public_key_, context_, parms_id, is_ntt_form,  destination);
+                }           
             }
         }
         else
         {
-            util::encrypt_zero_symmetric(secret_key_, context_, parms_id,
-                is_ntt_form, save_seed, destination);
-            // Does not require modulus switching
+            // Todo: Check correctness of encryption and return             
+            if(parms.scheme() == scheme_type::RGSW)
+            {
+                util::encrypt_zero_symmetric_rgsw(secret_key_, context_, parms_id, is_ntt_form, save_seed, destination);
+            }
+            else 
+            {
+                util::encrypt_zero_symmetric(secret_key_, context_, parms_id, is_ntt_form, save_seed, destination);
+            }
         }
     }
 
@@ -219,6 +256,29 @@ namespace seal
             // Result gets added into the c_0 term of ciphertext (c_0,c_1).
             util::multiply_add_plain_with_scaling_variant(
                 plain, *context_->first_context_data(), destination.data());
+        }
+        // Encryption of zero
+        else if (scheme == scheme_type::RGSW)
+        {
+            if(plain.is_ntt_form())
+            {
+                throw invalid_argument("plain cannot in NTT form for RGSW");
+            }  
+
+            std::cout<<" encrypting zeros. "<<std::endl;
+            // Todo: Modify encrypt_zero_custom to handle RGSW encryption.
+            encrypt_zero_custom(context_->first_parms_id(), destination, is_asymmetric, save_seed, pool);
+
+            std::uint64_t c_size = context_->key_context_data()->parms().get_rgsw_kpl();
+            destination.resize(context_, c_size);
+
+            /*
+            Todo: Have to check what first_context_data() works and its implications.
+            */
+            std::cout<<" zero encrypted, starting scaling of modulus. "<<std::endl;
+            for (int i = 0; i < c_size; i+=2){
+                util::multiply_add_plain_with_scaling_variant(plain, *context_->first_context_data(), destination.data(i));    
+            }            
         }
         else if (scheme == scheme_type::CKKS)
         {

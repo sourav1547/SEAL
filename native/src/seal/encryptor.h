@@ -14,13 +14,14 @@
 #include "seal/publickey.h"
 #include "seal/secretkey.h"
 #include "seal/util/smallntt.h"
+#include "seal/util/rgsw.h"
 
 namespace seal
 {
     /**
     Encrypts Plaintext objects into Ciphertext objects. Constructing an Encryptor
     requires a SEALContext with valid encryption parameters, the public key and/or
-    the secret key. If an Encrytor is given a secret key, it supports symmetric-key
+    the secret key. If an Encryptor is given a secret key, it supports symmetric-key
     encryption. If an Encryptor is given a public key, it supports asymmetric-key
     encryption.
 

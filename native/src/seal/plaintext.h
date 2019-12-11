@@ -14,6 +14,7 @@
 #include "seal/util/defines.h"
 #include "seal/memorymanager.h"
 #include "seal/encryptionparams.h"
+#include "seal/rgswencparams.h"
 #include "seal/intarray.h"
 #include "seal/context.h"
 #include "seal/valcheck.h"
@@ -30,6 +31,9 @@ namespace seal
     polynomial must be one less than the degree of the polynomial modulus. The
     backing array always allocates one 64-bit word per each coefficient of the
     polynomial.
+
+    // Sourav: Does the above paragraph means that the polynomial modulus is only
+    // 64 bits? If so, we gain no performance over TFHE.
 
     @par Memory Management
     The coefficient count of a plaintext refers to the number of word-size
@@ -58,6 +62,8 @@ namespace seal
     class Plaintext
     {
     public:
+
+        // Sourav: Here each coefficient is only 64 bits!
         using pt_coeff_type = std::uint64_t;
 
         /**
@@ -288,6 +294,8 @@ namespace seal
         }
 
         /**
+        Sourav: What is the purpose of setting few plaintext coefficients to zero?
+
         Sets a given range of coefficients of a plaintext polynomial to zero; does
         nothing if length is zero.
 
@@ -449,6 +457,7 @@ namespace seal
                 && (parms_id_ == compare.parms_id_)) ||
                 (!is_ntt_form() && !compare.is_ntt_form());
             return parms_id_compare
+            // Sourav: Unreachable code. 
                 && (sig_coeff_count == sig_coeff_count_compare)
                 && std::equal(data_.cbegin(),
                     data_.cbegin() + sig_coeff_count,

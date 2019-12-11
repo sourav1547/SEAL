@@ -13,6 +13,7 @@
 #include "seal/util/polycore.h"
 #include "seal/util/smallntt.h"
 #include "seal/util/rlwe.h"
+#include "seal/util/rgsw.h"
 
 using namespace std;
 using namespace seal::util;
@@ -170,7 +171,15 @@ namespace seal
 
         shared_ptr<UniformRandomGenerator> random(
             parms.random_generator()->create());
-        encrypt_zero_symmetric(secret_key_, context_, context_data.parms_id(), true, false, public_key_.data());
+
+        if(parms.scheme() == scheme_type::RGSW)
+        {
+            encrypt_zero_symmetric_rgsw(secret_key_, context_, context_data.parms_id(), true, false, public_key_.data());
+        }
+        else
+        {
+            encrypt_zero_symmetric(secret_key_, context_, context_data.parms_id(), true, false, public_key_.data());
+        }
 
         // Set the parms_id for public key
         public_key_.parms_id() = context_data.parms_id();

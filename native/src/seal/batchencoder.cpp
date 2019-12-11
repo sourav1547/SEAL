@@ -143,6 +143,8 @@ namespace seal
         destination.resize(slots_);
         destination.parms_id() = parms_id_zero;
 
+        // @sourav 
+        // Todo: A memcpy will increase performance here. Bound check is must.
         // First write the values to destination coefficients.
         // Read in top row, then bottom row.
         for (size_t i = 0; i < values_matrix_size; i++)
@@ -156,6 +158,7 @@ namespace seal
 
         // Transform destination using inverse of negacyclic NTT
         // Note: We already performed bit-reversal when reading in the matrix
+        // @sourav: Not clear what bit-reversal mean here.
         inverse_ntt_negacyclic_harvey(destination.data(), *context_data.plain_ntt_tables());
     }
 

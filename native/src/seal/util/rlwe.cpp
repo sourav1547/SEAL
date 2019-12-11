@@ -225,6 +225,11 @@ namespace seal
             }
         }
 
+        /**
+        Todo:
+        PublicKey of RLWE ciphertext is a symmetric key encryption of zero.
+        Hence for RGSW, while creation only, we have to set the size.
+        */
         void encrypt_zero_symmetric(
             const SecretKey &secret_key,
             shared_ptr<SEALContext> context,
@@ -248,6 +253,8 @@ namespace seal
             size_t coeff_mod_count = coeff_modulus.size();
             size_t coeff_count = parms.poly_modulus_degree();
             auto &small_ntt_tables = context_data.small_ntt_tables();
+            
+            
             size_t encrypted_size = 2;
 
             // If a polynomial is too small to store a seed, disable save_seed.

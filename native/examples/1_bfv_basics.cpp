@@ -197,7 +197,7 @@ void example_bfv_basics()
     a string with coefficients represented as hexadecimal numbers.
     */
     print_line(__LINE__);
-    int x = 6;
+    int x = 99;
     Plaintext x_plain(to_string(x));
     cout << "Express x = " + to_string(x) +
         " as a plaintext polynomial 0x" + x_plain.to_string() + "." << endl;

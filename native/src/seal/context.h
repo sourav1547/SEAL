@@ -130,7 +130,7 @@ namespace seal
     By default, SEALContext creates a chain of SEALContext::ContextData instances. The
     first one in the chain corresponds to special encryption parameters that are reserved
     to be used by the various key classes (SecretKey, PublicKey, etc.). These are the exact
-    same encryption parameters that are created by the user and passed to th constructor of
+    same encryption parameters that are created by the user and passed to the constructor of
     SEALContext. The functions key_context_data() and key_parms_id() return the ContextData
     and the parms_id corresponding to these special parameters. The rest of the ContextData
     instances in the chain correspond to encryption parameters that are derived from the
