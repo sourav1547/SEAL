@@ -15,6 +15,7 @@
 #include "seal/memorymanager.h"
 #include "seal/serialization.h"
 #include "seal/util/ztools.h"
+#include "seal/util/numth.h"
 
 namespace seal
 {
@@ -119,14 +120,18 @@ namespace seal
         }
 
 
-        EncryptionParameters(scheme_type scheme, std::uint64_t l, 
-            std::uint64_t bg_bit ) : scheme_(scheme), l_(l), bg_bit_(bg_bit)
+        EncryptionParameters(scheme_type scheme, size_t l, 
+            size_t bg_bit ) : scheme_(scheme), l_(l), bg_bit_(bg_bit)
         {
-            bg_ = 1 << bg_bit_;
-            kpl_ = 2*l_;
-            mask_mod_ = bg_ -1;
-            half_bg_ = bg_/2;
-        } 
+            if (scheme == scheme_type::RGSW){
+                bg_ = 1 << bg_bit_;
+                kpl_ = 2*2*l_;
+                mask_mod_ = bg_ -1;
+                half_bg_ = bg_/2;
+            } else{
+                throw std::invalid_argument("Incorrect Constructor for the given scheme.");
+            }
+        }
 
         /**
         Creates a copy of a given instance of EncryptionParameters.
@@ -180,6 +185,54 @@ namespace seal
 
             // Re-compute the parms_id
             compute_parms_id();
+        }
+
+        /**
+        @Sourav, initialize the gadget matrix.
+        */
+
+        inline void init_gadget_matrix(){
+            if (scheme_ != scheme_type::RGSW){
+                throw std::invalid_argument("Incorrect scheme for gadget matrix");
+            }
+
+            if (coeff_modulus_.size() == 0){
+                throw std::invalid_argument("Coefficient modulus not set.");
+            }
+
+            std::uint64_t bg_i;
+            bool exist_inverse;
+            std::uint64_t inverse=0;
+            std::uint64_t num_rows = int(kpl_/2); // 2l = kpl/2
+            auto first_coeff_mod = (coeff_modulus_[0]).value();
+            for (int i=0; i<num_rows; i++){
+                if(i < l_){
+                    bg_i = 1<< (i+1)*bg_bit_;
+                    exist_inverse = util::try_mod_inverse(bg_i, first_coeff_mod, inverse);
+                    if (exist_inverse){
+                        gadget_.push_back(inverse);
+                        gadget_.push_back(0);
+                    }
+                    else{
+                        throw std::invalid_argument("Inverse does not exist");
+                    }
+                }   
+                else{
+                    bg_i = 1<< (i-l_+1)*bg_bit_;
+                    exist_inverse = util::try_mod_inverse(bg_i, first_coeff_mod, inverse);
+                    if (exist_inverse){
+                        gadget_.push_back(0);
+                        gadget_.push_back(inverse);
+                    }
+                    else{
+                        throw std::invalid_argument("Inverse does not exist");
+                    }
+                }
+            }
+        } 
+
+        SEAL_NODISCARD inline std::vector<std::uint64_t> gadget() const{
+            return gadget_;
         }
 
         /**
@@ -305,6 +358,21 @@ namespace seal
         }
 
         /**
+        @Sourav: As of now, since we will only be using ciphertext modulus of 
+        less than 64 bits, we will use the first element of the coeff_modulus.
+
+        The following function returns the first element of the coeff_modulus.
+        */
+        SEAL_NODISCARD inline auto coeff_modulus_first() const
+            -> const SmallModulus&
+        {
+            if (coeff_modulus_.size() > 1){
+                throw std::invalid_argument("coefficient modulus contains size > 64 bit");
+            }
+            return coeff_modulus_[0];
+        }
+
+        /**
         Returns a const reference to the currently set plaintext modulus parameter.
         */
         SEAL_NODISCARD inline const SmallModulus &plain_modulus() const noexcept
@@ -339,6 +407,14 @@ namespace seal
             if(scheme_ != scheme_type::RGSW)
                 throw std::invalid_argument("Incorrect request for set_rgsw_kpl");
             kpl_ = kpl;
+        }
+
+        /**
+        Return RGSW ciphertext base
+        */
+        SEAL_NODISCARD inline uint64_t get_rgsw_bg_bit() const noexcept
+        {
+            return bg_bit_;
         }
 
         /**
@@ -606,7 +682,9 @@ namespace seal
         std::uint64_t bg_ = 2;// Decomposition base
         std::uint64_t half_bg_ = 1; // Bg/2
         std::uint64_t mask_mod_; // Bg-1 Todo:Check whether this is necessary
-        std::uint64_t kpl_; // number of rows (k+1)*l. In the RGSW example shown in Ring-ORAM k=1.
+        std::uint64_t kpl_ = 2*2*l_; // number of rows (k+1)*2*l. In the RGSW example shown in Ring-ORAM k=1.
+        std::vector<std::uint64_t> gadget_; //
+
     };
 }
 

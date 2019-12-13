@@ -74,6 +74,16 @@ namespace seal
             }
         }
 
+        /**
+        @Sourav: Currently the extended euclidean algorithm only takes an
+        single uint64_t modulus and compute the multiplicative inverse. This 
+        is limits the size of the ciphertext we can incorporate. 
+
+        Todo: 
+            1. We have to extend this to accommodate the RNS decomposition.
+            2. Re-think what multiplicative inverse in the RNS decomposition imply.
+        */
+
         SEAL_NODISCARD inline auto xgcd(std::uint64_t x, std::uint64_t y)
             -> std::tuple<std::uint64_t, std::int64_t, std::int64_t>
         {

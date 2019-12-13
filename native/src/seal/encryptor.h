@@ -453,6 +453,8 @@ namespace seal
         */
         struct EncryptorPrivateHelper;
 
+
+
     private:
         Encryptor(const Encryptor &copy) = delete;
 
@@ -471,6 +473,10 @@ namespace seal
         void encrypt_custom(const Plaintext &plain, Ciphertext &destination,
             bool is_asymmetric, bool save_seed,
             MemoryPoolHandle pool = MemoryManager::GetPool()) const;
+
+        void add_gadget_matrix(const Plaintext &plain, 
+            const SEALContext::ContextData &context_data, 
+            std::uint64_t *destination) const;
 
         std::shared_ptr<SEALContext> context_{ nullptr };
 

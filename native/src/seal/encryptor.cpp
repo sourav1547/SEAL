@@ -232,6 +232,45 @@ namespace seal
         }
     }
 
+    void Encryptor::add_gadget_matrix(const Plaintext &plain, 
+        const SEALContext::ContextData &context_data, 
+        std::uint64_t *destination) const
+    {
+        auto &parms = context_data.parms();
+        size_t c_size = parms.get_rgsw_kpl();
+        size_t num_rows = c_size/2;
+        size_t l = num_rows/2;
+
+        size_t coeff_count = parms.poly_modulus_degree(); // polynomial degree n
+        size_t plain_coeff_count = plain.coeff_count();   // plaintext degree m<=n
+        auto gadget = parms.gadget();
+        
+        /** 
+        Todo: Here I am assuming that both plaintext modulus t and ciphertext 
+        modulus q are at most 64 bit numbers.
+        */
+        unsigned long long prod[2] { 0, 0 };
+        std::uint64_t result;
+        size_t index=0;
+
+        for (int row=0; row<num_rows; row++, destination++)
+        {
+            if (row >=l)
+                destination++;
+                index=1;
+
+            for (size_t i=0; i<plain_coeff_count; i++){          
+                util::multiply_uint64(gadget[2*row+index], plain[i], prod);
+                result = static_cast<uint64_t>(prod[1]);
+                destination[i] = result;
+            }
+
+            if (index==0)
+                destination++;
+
+        }
+    }
+
     void Encryptor::encrypt_custom(const Plaintext &plain, Ciphertext &destination,
         bool is_asymmetric, bool save_seed, MemoryPoolHandle pool) const
     {
@@ -260,25 +299,19 @@ namespace seal
         // Encryption of zero
         else if (scheme == scheme_type::RGSW)
         {
-            if(plain.is_ntt_form())
-            {
+            if(plain.is_ntt_form()){
                 throw invalid_argument("plain cannot in NTT form for RGSW");
             }  
-
-            std::cout<<" encrypting zeros. "<<std::endl;
-            // Todo: Modify encrypt_zero_custom to handle RGSW encryption.
+            // Todo: Double check the correctness of the multiplication scheme.
             encrypt_zero_custom(context_->first_parms_id(), destination, is_asymmetric, save_seed, pool);
 
-            std::uint64_t c_size = context_->key_context_data()->parms().get_rgsw_kpl();
-            destination.resize(context_, c_size);
-
-            /*
-            Todo: Have to check what first_context_data() works and its implications.
+            /**
+            Todo: 
+            1. Unlike scaling in BFV ciphertext, here we do not scale the message
+            coefficient while creating the RGSW ciphertext.
             */
-            std::cout<<" zero encrypted, starting scaling of modulus. "<<std::endl;
-            for (int i = 0; i < c_size; i+=2){
-                util::multiply_add_plain_with_scaling_variant(plain, *context_->first_context_data(), destination.data(i));    
-            }            
+            std::cout<<"inside encrypt_custom"<<std::endl;
+            add_gadget_matrix(plain, *context_->first_context_data(), destination.data());
         }
         else if (scheme == scheme_type::CKKS)
         {

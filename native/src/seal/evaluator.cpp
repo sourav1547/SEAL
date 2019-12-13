@@ -40,6 +40,7 @@ namespace seal
             throw invalid_argument("encryption parameters are not set correctly");
         }
 
+        // Sourav: I don't understand what are these?
         // Calculate map from Zmstar to generator representation
         populate_Zmstar_to_generator();
     }
