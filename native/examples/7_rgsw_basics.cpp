@@ -15,7 +15,7 @@ void example_rgsw_basics(){
 		scheme_type, l, bg_bit 
 	*/
 	EncryptionParameters parms(scheme_type::RGSW, 4, 2);
-	size_t poly_modulus_degree = 4096;
+	size_t poly_modulus_degree = 1024;
 	parms.set_poly_modulus_degree(poly_modulus_degree);
 
 	/**
@@ -23,7 +23,8 @@ void example_rgsw_basics(){
 	be able to work of default coefficient modulus for BFV.
 	*/
 	parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
-	parms.set_plain_modulus(256);
+	parms.set_plain_modulus(27);
+	parms.init_gadget_matrix();
 	auto context = SEALContext::Create(parms);
 
 	cout << "Encryption parameters set." << endl;
